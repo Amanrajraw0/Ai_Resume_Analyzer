@@ -20,7 +20,10 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo '🐳 Building Docker image...'
-                sh 'docker build -t $DOCKER_IMAGE:latest .'
+                sh '''
+                docker system prune -f
+                docker build -t ${DOCKER_IMAGE}:latest .
+                '''
             }
         }
 
@@ -28,8 +31,8 @@ pipeline {
             steps {
                 echo '📤 Pushing image to Docker Hub...'
                 sh '''
-                echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                docker push $DOCKER_IMAGE:latest
+                echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
+                docker push ${DOCKER_IMAGE}:latest
                 '''
             }
         }
@@ -39,14 +42,14 @@ pipeline {
                 echo '🚀 Deploying to EC2-B...'
                 sshagent (credentials: ['ec2b_ssh']) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no ubuntu@$DEPLOY_SERVER '
+                    ssh -o StrictHostKeyChecking=no ubuntu@${DEPLOY_SERVER} '
                         echo "🧹 Cleaning up old container..." &&
                         docker stop myapp || true &&
                         docker rm myapp || true &&
                         echo "📥 Pulling latest image..." &&
-                        docker pull $DOCKER_IMAGE:latest &&
-                        echo "▶️ Starting new container..." &&
-                        docker run -d -p 80:80 --name myapp $DOCKER_IMAGE:latest &&
+                        docker pull ${DOCKER_IMAGE}:latest &&
+                        echo "▶️ Starting new container on port 80..." &&
+                        docker run -d -p 80:3000 --name myapp ${DOCKER_IMAGE}:latest &&
                         echo "✅ Deployment complete!"
                     '
                     """
@@ -60,7 +63,7 @@ pipeline {
             echo '✅ Pipeline completed successfully! App deployed to EC2-B.'
         }
         failure {
-            echo '❌ Pipeline failed. Check logs.'
+            echo '❌ Pipeline failed. Check logs for errors.'
         }
     }
 }
