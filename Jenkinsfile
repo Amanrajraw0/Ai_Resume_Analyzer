@@ -2,46 +2,38 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub')   // Jenkins Credential ID
-        DOCKER_IMAGE = "amanrajraw0/instantprachi"    // Docker Hub Repo
-        GIT_REPO = "https://github.com/Amanrajraw0/Ai_Resume_Analyzer.git" // Your GitHub repo
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-login')
+        IMAGE_NAME = "amanrajraw0/instantprachi"
     }
 
     stages {
-
-        stage('Checkout Code') {
+        stage('Clone from GitHub') {
             steps {
-                echo '📦 Pulling code from GitHub...'
-                git branch: 'main', url: "${GIT_REPO}"
+                git branch: 'main', url: 'https://github.com/<your-username>/<your-repo>.git'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo '🐳 Building optimized Docker image...'
-                sh '''
-                docker build -t ${DOCKER_IMAGE}:latest .
-                '''
+                sh "docker build -t ${IMAGE_NAME}:latest ."
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                sh "echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin"
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                echo '📤 Pushing image to Docker Hub...'
-                sh '''
-                echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
-                docker push ${DOCKER_IMAGE}:latest
-                '''
+                sh "docker push ${IMAGE_NAME}:latest"
             }
         }
     }
 
     post {
-        success {
-            echo '✅ Pipeline completed successfully! Image pushed to Docker Hub.'
-        }
-        failure {
-            echo '❌ Pipeline failed. Check logs for errors.'
-        }
+        success { echo '✅ Build and push completed successfully!' }
+        failure { echo '❌ Build failed!' }
     }
 }
