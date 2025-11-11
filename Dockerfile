@@ -1,32 +1,28 @@
 # -----------------------------
-# 🧱 Stage 1: Build the App
+# 🧱 Stage 1: Build React App
 # -----------------------------
-FROM node:20-alpine AS build
+FROM node:20-slim AS build
 WORKDIR /app
 
-# Copy dependency files and install all dependencies
+# Copy dependency files and install dependencies
 COPY package*.json ./
-RUN npm ci
+RUN npm install --quiet
 
-# Copy source code and build
+# Copy rest of project and build
 COPY . .
 RUN npm run build
 
 # -----------------------------
-# 🚀 Stage 2: Production Image
+# 🚀 Stage 2: Serve via Nginx
 # -----------------------------
-FROM node:20-alpine
-WORKDIR /app
+FROM nginx:alpine
+WORKDIR /usr/share/nginx/html
 
-# Copy only what's needed for runtime
-COPY package*.json ./
-RUN npm ci --omit=dev
+# Copy build output from previous stage
+COPY --from=build /app/build ./
 
-# Copy build artifacts from the build stage
-COPY --from=build /app/build ./build
+# Expose port 80
+EXPOSE 80
 
-# Expose app port (React Router serve defaults to 3000)
-EXPOSE 3000
-
-# Start the React Router server
-CMD ["npm", "start"]
+# Start Nginx
+CMD ["nginx", "-g", "daemon off;"]
