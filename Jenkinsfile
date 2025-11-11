@@ -8,6 +8,13 @@ pipeline {
         DEPLOY_SERVER = "16.171.173.38"
     }
 
+    options {
+        // Keep build console tidy & show timestamps
+        timestamps()
+        // Stop long stuck builds automatically
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
     stages {
 
         stage('Checkout Code') {
@@ -17,19 +24,22 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build & Tag Docker Image (with cache)') {
             steps {
-                echo '🐳 Building Docker image...'
+                echo '⚙️ Building Docker image efficiently...'
                 sh '''
-                docker system prune -f
-                docker build -t ${DOCKER_IMAGE}:latest .
+                # Pull previous image if exists to use cached layers
+                docker pull ${DOCKER_IMAGE}:latest || true
+
+                # Build with cache and optimized parallel layers
+                docker build --pull --cache-from=${DOCKER_IMAGE}:latest -t ${DOCKER_IMAGE}:latest .
                 '''
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                echo '📤 Pushing image to Docker Hub...'
+                echo '📤 Pushing optimized image to Docker Hub...'
                 sh '''
                 echo ${DOCKERHUB_CREDENTIALS_PSW} | docker login -u ${DOCKERHUB_CREDENTIALS_USR} --password-stdin
                 docker push ${DOCKER_IMAGE}:latest
@@ -48,7 +58,7 @@ pipeline {
                         docker rm myapp || true &&
                         echo "📥 Pulling latest image..." &&
                         docker pull ${DOCKER_IMAGE}:latest &&
-                        echo "▶️ Starting new container on port 80..." &&
+                        echo "▶️ Starting new container..." &&
                         docker run -d -p 80:3000 --name myapp ${DOCKER_IMAGE}:latest &&
                         echo "✅ Deployment complete!"
                     '
