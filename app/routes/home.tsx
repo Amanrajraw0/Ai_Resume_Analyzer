@@ -1,7 +1,7 @@
 import { resumes } from "../../constants";
 import ResumeCard from "~/components/ResumeCard";
 import type { Route } from "./+types/home";
-import NavBar from "~/components/NavBar";
+import Navbar from "~/components/Navbar";
 import { usePuterStore } from "~/lib/puter";
 import { useNavigate } from "react-router";
 import { useEffect } from "react";
@@ -24,7 +24,7 @@ export default function Home() {
 
   return (
     <main className="bg-[url('/images/bg-main.svg')] bg-cover">
-      <NavBar />
+      <Navbar/>
       
       
 
