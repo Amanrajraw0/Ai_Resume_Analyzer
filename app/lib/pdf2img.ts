@@ -8,23 +8,15 @@ let pdfjsLib: any = null;
 let isLoading = false;
 let loadPromise: Promise<any> | null = null;
 
-// ✅ Load pdf.js once and cache it
 async function loadPdfJs(): Promise<any> {
-    if (pdfjsLib) return pdfjsLib; // already loaded
-    if (loadPromise) return loadPromise; // in-progress load
-
-    if (typeof window === "undefined") {
-        throw new Error("PDF.js can only be loaded in the browser environment");
-    }
+    if (pdfjsLib) return pdfjsLib;
+    if (loadPromise) return loadPromise;
 
     isLoading = true;
-
-    // Dynamically import both pdf.js core and worker file
-    loadPromise = Promise.all([
-        import("pdfjs-dist/build/pdf.mjs"),
-        import("pdfjs-dist/build/pdf.worker.mjs?url"),
-    ]).then(([lib, worker]) => {
-        lib.GlobalWorkerOptions.workerSrc = worker.default;
+    // @ts-expect-error - pdfjs-dist/build/pdf.mjs is not a module
+    loadPromise = import("pdfjs-dist/build/pdf.mjs").then((lib) => {
+        // Set the worker source to use local file
+        lib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
         pdfjsLib = lib;
         isLoading = false;
         return lib;
@@ -33,8 +25,9 @@ async function loadPdfJs(): Promise<any> {
     return loadPromise;
 }
 
-// ✅ Convert a PDF into an image (only first page)
-export async function convertPdfToImage(file: File): Promise<PdfConversionResult> {
+export async function convertPdfToImage(
+    file: File
+): Promise<PdfConversionResult> {
     try {
         const lib = await loadPdfJs();
 
@@ -42,7 +35,7 @@ export async function convertPdfToImage(file: File): Promise<PdfConversionResult
         const pdf = await lib.getDocument({ data: arrayBuffer }).promise;
         const page = await pdf.getPage(1);
 
-        const viewport = page.getViewport({ scale: 3 });
+        const viewport = page.getViewport({ scale: 4 });
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
 
@@ -51,21 +44,20 @@ export async function convertPdfToImage(file: File): Promise<PdfConversionResult
 
         if (context) {
             context.imageSmoothingEnabled = true;
-            (context as any).imageSmoothingQuality = "high";
+            context.imageSmoothingQuality = "high";
         }
 
         await page.render({ canvasContext: context!, viewport }).promise;
 
-        // Convert canvas to blob + File object
         return new Promise((resolve) => {
             canvas.toBlob(
                 (blob) => {
                     if (blob) {
-                        const imageFile = new File(
-                            [blob],
-                            `${file.name.replace(/\.pdf$/i, "")}.png`,
-                            { type: "image/png" }
-                        );
+                        // Create a File from the blob with the same name as the pdf
+                        const originalName = file.name.replace(/\.pdf$/i, "");
+                        const imageFile = new File([blob], `${originalName}.png`, {
+                            type: "image/png",
+                        });
 
                         resolve({
                             imageUrl: URL.createObjectURL(blob),
@@ -75,20 +67,19 @@ export async function convertPdfToImage(file: File): Promise<PdfConversionResult
                         resolve({
                             imageUrl: "",
                             file: null,
-                            error: "Failed to create image blob from canvas",
+                            error: "Failed to create image blob",
                         });
                     }
                 },
                 "image/png",
                 1.0
-            );
+            ); // Set quality to maximum (1.0)
         });
     } catch (err) {
-        console.error("❌ PDF conversion failed:", err);
         return {
             imageUrl: "",
             file: null,
-            error: `Failed to convert PDF: ${String(err)}`,
+            error: `Failed to convert PDF: ${err}`,
         };
     }
 }
