@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { usePuterStore } from "~/lib/puter";
 
-const Navbar = () => {
+const NavBar = () => {
   const {
     auth,
     loadAvatar,
@@ -75,4 +75,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default NavBar;

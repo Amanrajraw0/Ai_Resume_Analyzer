@@ -1,5 +1,5 @@
 import {type FormEvent, useState} from 'react'
-import Navbar from ".././components/Navbar";
+import NavBar from ".././components/NavBar";
 import FileUploader from "~/components/FileUploader";
 import {usePuterStore} from "~/lib/puter";
 import {useNavigate} from "react-router";
@@ -80,7 +80,7 @@ const Upload = () => {
 
     return (
         <main className="bg-[url('/images/bg-main.svg')] bg-cover">
-            <Navbar />
+            <NavBar />
 
             <section className="main-section">
                 <div className="page-heading py-16">
