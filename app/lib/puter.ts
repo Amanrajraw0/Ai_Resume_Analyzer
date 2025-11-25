@@ -72,7 +72,13 @@ interface PuterStore {
             testMode?: boolean,
             options?: PuterChatOptions
         ) => Promise<AIResponse | undefined>;
-        feedback: (path: string, message: string) => Promise<AIResponse | undefined>;
+        feedback: (
+            path: string,
+            message: string,
+            model: string
+        ) => Promise<AIResponse | undefined>;
+
+
         img2txt: (
             image: string | File | Blob,
             testMode?: boolean
@@ -309,6 +315,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
     };
 
     /* --------------------------- AI --------------------------- */
+    /* --------------------------- AI --------------------------- */
     const chat = async (
         prompt: string | ChatMessage[],
         imageURL?: string | PuterChatOptions,
@@ -325,7 +332,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
         >;
     };
 
-    const feedback = async (path: string, message: string) => {
+    const feedback = async (path: string, message: string, model: string) => {
         const puter = getPuter();
         if (!puter) {
             setError("Puter.js not available");
@@ -342,7 +349,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
                     ]
                 }
             ],
-            { model: "claude-3-7-sonnet" }
+            { model } // <-- NOW THIS WORKS
         ) as Promise<AIResponse | undefined>;
     };
 
@@ -354,6 +361,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
         }
         return puter.ai.img2txt(image, testMode);
     };
+
 
     /* --------------------------- KV HELPERS --------------------------- */
     const getKV = async (key: string) => {
@@ -466,8 +474,8 @@ export const usePuterStore = create<PuterStore>((set, get) => {
 
         ai: {
             chat,
-            feedback,
-            img2txt
+            feedback: (path, message, model) => feedback(path, message, model),
+            img2txt,
         },
 
         kv: {

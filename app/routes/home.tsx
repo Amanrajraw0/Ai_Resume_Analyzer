@@ -5,6 +5,8 @@ import { usePuterStore } from "~/lib/puter";
 import { Link, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 
+
+
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Resumind" },
@@ -40,7 +42,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="bg-[url('/images/bg-main.svg')] bg-cover">
+    <main className="bg-[url('/images/bg-main.svg')] bg-cover bg-no-repeat bg-center min-h-screen w-full">
       <Navbar />
 
       <section className="main-section">

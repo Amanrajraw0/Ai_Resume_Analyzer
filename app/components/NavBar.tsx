@@ -37,7 +37,7 @@ const NavBar = () => {
       </Link>
 
       {/* Right Section */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-6 ">
         {/* Upload button */}
         <Link to="/upload" className="primary-button w-fit">
           Upload Resume
